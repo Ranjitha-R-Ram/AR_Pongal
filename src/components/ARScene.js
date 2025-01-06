@@ -19,11 +19,38 @@ const ARScene = () => {
     webgl: false,
     getUserMedia: false,
   });
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
-  const models = {
-    video: "/models/pongal.mp4",
-    marker: "/models/marker.patt",
+  // Get the correct base path for GitHub Pages
+  const getBasePath = () => {
+    // If PUBLIC_URL is set (in production/GitHub Pages), use it
+    // Otherwise, use empty string for development
+    return process.env.PUBLIC_URL || "";
   };
+
+  // Define video path relative to public folder
+  const models = {
+    // This will work both locally and on GitHub Pages
+    video: `${getBasePath()}/models/pongal.mp4`,
+    marker: `${getBasePath()}/models/marker.patt`,
+  };
+
+  const handleVideoError = (error) => {
+    console.error("Video loading error:", error);
+    console.log("Attempted video path:", models.video);
+    setError(`Failed to load video. Path: ${models.video}`);
+  };
+
+  const handleVideoLoaded = () => {
+    setVideoLoaded(true);
+    console.log("Video loaded successfully");
+  };
+
+  // const models = {
+  //   video: pongalVideo,
+  //   // video:'https://cdn.aframe.io/videos/fireworks.mp4',
+  //   marker: "/models/marker.patt",
+  // };
 
   useEffect(() => {
     checkBrowserSupport();
@@ -264,17 +291,23 @@ const ARScene = () => {
       </div>
 
       {potDetected && showVideo && (
-        <div className="text-xs mt-6 text-green-400">
-          Pot Detected!
-          <div className="absolute inset-0 flex items-center justify-center z-50">
+        <div className="absolute inset-0 flex items-center justify-center z-50">
+          <div className="relative w-full h-full">
+            {!videoLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75">
+                <div className="text-white">Loading video...</div>
+              </div>
+            )}
             <video
               ref={playbackVideoRef}
               src={models.video}
               autoPlay
               width="1000"
               height="600"
-              // loop
+              playsInline
               className="w-full h-full object-contain"
+              onError={handleVideoError}
+              onLoadedData={handleVideoLoaded}
             />
           </div>
         </div>
