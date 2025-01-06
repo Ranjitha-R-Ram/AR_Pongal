@@ -1,0 +1,120 @@
+/* ARScene.css */
+
+/* Set the background color of the AR scene */
+.ar-scene-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background-color: white;
+  }
+  
+  /* Loading state styles */
+  .ar-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 50;
+  }
+  
+  .ar-loading .icon-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .ar-loading .text {
+    color: white;
+    font-size: 1.25rem;
+  }
+  
+  /* Error message styles */
+  .ar-error-message {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #f87171; /* Red color */
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    z-index: 50;
+  }
+  
+  /* Camera status */
+  .ar-camera-status {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    color: black;
+    z-index: 50;
+  }
+  
+  .ar-camera-status .status-indicator {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+  }
+  
+  .ar-camera-status .status-indicator.active {
+    background-color: #22c55e; /* Green for active */
+  }
+  
+  .ar-camera-status .status-indicator.inactive {
+    background-color: #ef4444; /* Red for inactive */
+  }
+  
+  .ar-camera-status .detection-ratio {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  /* Model viewer styles */
+  .ar-model-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 40;
+    background-color: white;
+  }
+  
+  .ar-model-container .loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.75); /* White background with opacity */
+    z-index: 50;
+  }
+  
+  .ar-model-container .loading-overlay .text {
+    color: black;
+  }
+  
+  /* Style for model-viewer element */
+  .ar-model-viewer {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    --progress-bar-color: #4caf50;
+    --progress-bar-height: 4px;
+  }
+  
+  /* Hide the canvas */
+  .ar-canvas {
+    display: none;
+  }
+  
+  /* Video element styles */
+  .ar-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  

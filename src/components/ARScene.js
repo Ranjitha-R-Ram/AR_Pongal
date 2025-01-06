@@ -1,69 +1,46 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Camera } from "lucide-react";
-import * as THREE from "three";
+import "./ARScene.css";
 
 const ARScene = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const playbackVideoRef = useRef(null);
-  const sceneRef = useRef(null); // To hold the 3D scene
-  const cameraRef = useRef(null); // Camera for three.js scene
-  const [showAR, setShowAR] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [cameraActive, setCameraActive] = useState(false);
   const [error, setError] = useState(null);
   const [potDetected, setPotDetected] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
+  const [showModel, setShowModel] = useState(false);
+  const [modelLoaded, setModelLoaded] = useState(false);
   const [debugInfo, setDebugInfo] = useState({ potPixels: 0, ratio: 0 });
   const [browserSupport, setBrowserSupport] = useState({
     webgl: false,
     getUserMedia: false,
   });
-  const [videoLoaded, setVideoLoaded] = useState(false);
 
-  // Get the correct base path for GitHub Pages
-  const getBasePath = () => {
-    // If PUBLIC_URL is set (in production/GitHub Pages), use it
-    // Otherwise, use empty string for development
-    return process.env.PUBLIC_URL || "";
-  };
-
-  // Define video path relative to public folder
-  const models = {
-    // This will work both locally and on GitHub Pages
-    video: `${getBasePath()}/models/pongal.mp4`,
-    marker: `${getBasePath()}/models/marker.patt`,
-  };
-
-  const handleVideoError = (error) => {
-    console.error("Video loading error:", error);
-    console.log("Attempted video path:", models.video);
-    setError(`Failed to load video. Path: ${models.video}`);
-  };
-
-  const handleVideoLoaded = () => {
-    setVideoLoaded(true);
-    console.log("Video loaded successfully");
-  };
-
-  // const models = {
-  //   video: pongalVideo,
-  //   // video:'https://cdn.aframe.io/videos/fireworks.mp4',
-  //   marker: "/models/marker.patt",
-  // };
+  const MODEL_URL =
+    "https://modelviewer.dev/shared-assets/models/Astronaut.glb";
 
   useEffect(() => {
-    checkBrowserSupport();
-  }, []);
-
-  useEffect(() => {
-    if (browserSupport.webgl && browserSupport.getUserMedia) {
-      initializeCamera();
-    }
-    return () => {
-      stopCamera();
+    const loadModelViewer = async () => {
+      if (!customElements.get("model-viewer")) {
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src =
+          "https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js";
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+        console.log("model-viewer loaded successfully");
+      }
     };
-  }, [browserSupport]);
+
+    loadModelViewer().catch((err) => {
+      console.error("Failed to load model-viewer:", err);
+      setError("Failed to load 3D viewer component");
+    });
+  }, []);
 
   const checkBrowserSupport = () => {
     const canvas = document.createElement("canvas");
@@ -77,7 +54,6 @@ const ARScene = () => {
     const getUserMediaSupport = !!(
       navigator.mediaDevices && navigator.mediaDevices.getUserMedia
     );
-
     setBrowserSupport((prev) => ({
       ...prev,
       getUserMedia: getUserMediaSupport,
@@ -86,11 +62,23 @@ const ARScene = () => {
     if (!getUserMediaSupport) {
       setError("Your browser does not support camera access");
     }
-
     if (!gl) {
       setError("Your browser does not support WebGL, which is required for AR");
     }
   };
+
+  useEffect(() => {
+    checkBrowserSupport();
+  }, []);
+
+  useEffect(() => {
+    if (browserSupport.webgl && browserSupport.getUserMedia) {
+      initializeCamera();
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [browserSupport]);
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
@@ -110,18 +98,12 @@ const ARScene = () => {
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-
         await new Promise((resolve) => {
-          videoRef.current.onloadedmetadata = () => {
-            resolve();
-          };
+          videoRef.current.onloadedmetadata = resolve;
         });
-
         await videoRef.current.play();
-
         setCameraActive(true);
         setIsLoading(false);
         startDetection();
@@ -174,11 +156,7 @@ const ARScene = () => {
         for (let y = centerY; y < centerY + centerHeight; y += 2) {
           for (let x = centerX; x < centerX + centerWidth; x += 2) {
             const i = (y * canvas.width + x) * 4;
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-
-            if (isPotColor(r, g, b)) {
+            if (isPotColor(data[i], data[i + 1], data[i + 2])) {
               potPixels++;
             }
           }
@@ -191,12 +169,12 @@ const ARScene = () => {
           detectionCounter++;
           if (detectionCounter >= detectionThreshold) {
             setPotDetected(true);
-            setShowVideo(true);
+            setShowModel(true);
           }
         } else {
           detectionCounter = 0;
           setPotDetected(false);
-          setShowVideo(false);
+          setShowModel(false);
         }
       } catch (err) {
         console.error("Detection error:", err);
@@ -214,146 +192,90 @@ const ARScene = () => {
     };
   };
 
-  const show3DModel = () => {
-    // Add logic to show a 3D model using Three.js when pot is detected
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    sceneRef.current.appendChild(renderer.domElement);
+  const handleModelLoad = () => {
+    setModelLoaded(true);
+    console.log("3D model loaded successfully");
+  };
 
-    // Create a simple cube to simulate 3D object
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    camera.position.z = 5;
-
-    const animate = function () {
-      requestAnimationFrame(animate);
-
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-
-      renderer.render(scene, camera);
-    };
-
-    animate();
+  const handleModelError = (error) => {
+    console.error("Model loading error:", error);
+    setError("Failed to load 3D model");
   };
 
   if (!browserSupport.webgl || !browserSupport.getUserMedia) {
     return (
-      <div className="p-4">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {!browserSupport.webgl && "WebGL is not supported in your browser. "}
-          {!browserSupport.getUserMedia &&
-            "Camera access is not supported in your browser."}
-          <br />
-          Please try using a modern browser like Chrome or Firefox.
-        </div>
+      <div className="ar-error-message">
+        {!browserSupport.webgl && "WebGL is not supported in your browser. "}
+        {!browserSupport.getUserMedia &&
+          "Camera access is not supported in your browser."}
+        <br />
+        Please try using a modern browser like Chrome or Firefox.
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-screen bg-black">
+    <div className="ar-scene-container">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
-          <div className="flex flex-col items-center gap-4">
+        <div className="ar-loading">
+          <div className="icon-container">
             <Camera className="w-8 h-8 text-white" />
-            <div className="text-white text-xl">Starting camera...</div>
+            <div className="text">Starting camera...</div>
           </div>
         </div>
       )}
 
-      {error && (
-        <div className="absolute top-0 left-0 right-0 bg-red-500 text-white p-4 text-center z-50">
-          {error}
+      {error && <div className="ar-error-message">{error}</div>}
+
+      <div className="ar-camera-status">
+        <div className="flex items-center gap-2">
+          <div
+            className={`status-indicator ${
+              cameraActive ? "active" : "inactive"
+            }`}
+          />
+          <span>Camera: {cameraActive ? "Active" : "Inactive"}</span>
+        </div>
+        <div className="detection-ratio">
+          Detection: {(debugInfo.ratio * 100).toFixed(2)}%
+        </div>
+      </div>
+
+      {potDetected && showModel && (
+        <div className="ar-model-container">
+          {!modelLoaded && (
+            <div className="loading-overlay">
+              <div className="text">Loading 3D model...</div>
+            </div>
+          )}
+          <model-viewer
+            src={MODEL_URL}
+            camera-controls
+            auto-rotate
+            ar
+            ar-modes="webxr scene-viewer quick-look"
+            shadow-intensity="1"
+            environment-image="neutral"
+            exposure="1"
+            camera-target="0 1.5 0"
+            camera-orbit="0deg 90deg 2.5m"
+            min-camera-orbit="auto auto 1.5m"
+            max-camera-orbit="auto auto 4m"
+            auto-rotate-delay="0"
+            rotation-per-second="20deg"
+            interaction-policy="allow-when-focused"
+            onload={handleModelLoad}
+            onerror={handleModelError}
+            className="ar-model-viewer"
+          />
         </div>
       )}
 
-      <div className="flex items-center gap-2">
-        <div
-          className={`w-2 h-2 rounded-full ${
-            cameraActive ? "bg-green-500" : "bg-red-500"
-          }`}
-        />
-        <span>Camera: {cameraActive ? "Active" : "Inactive"}</span>
-      </div>
-      <div className="text-xs mt-1">
-        Detection: {(debugInfo.ratio * 100).toFixed(2)}%
-      </div>
-
-      {potDetected && showVideo && (
-        <div className="absolute inset-0 flex items-center justify-center z-50">
-          <div className="relative w-full h-full">
-            {!videoLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75">
-                <div className="text-white">Loading video...</div>
-              </div>
-            )}
-            <video
-              ref={playbackVideoRef}
-              src={models.video}
-              autoPlay
-              width="1000"
-              height="600"
-              playsInline
-              className="w-full h-full object-contain"
-              onError={handleVideoError}
-              onLoadedData={handleVideoLoaded}
-            />
-          </div>
-        </div>
+      {!potDetected && !showModel && (
+        <video ref={videoRef} className="ar-video" playsInline muted />
       )}
 
-      {/* Camera Feed - Hidden when Pot is Detected */}
-      {!potDetected && (
-        <video
-          ref={videoRef}
-          className="w-full h-full object-cover"
-          playsInline
-          muted
-        />
-      )}
-
-      <canvas
-        ref={canvasRef}
-        className="absolute top-0 left-0 w-full h-full object-cover opacity-0"
-      />
-
-      {showAR && (
-        <a-scene
-          embedded
-          arjs="sourceType: webcam; debugUIEnabled: true; trackingMethod: best;"
-          className="absolute top-0 left-0 w-full h-full z-30">
-          <a-marker type="pattern" url={models.marker}>
-            <a-entity
-              gltf-model={models.ox}
-              position="0 0 0"
-              scale="0.5 0.5 0.5"
-              animation="property: rotation; to: 0 360 0; dur: 2000; loop: true"
-            />
-            <a-entity
-              gltf-model={models.family}
-              position="0 1 0"
-              scale="0.5 0.5 0.5"
-              animation="property: position; to: 0 2 0; dur: 2000; loop: true"
-            />
-          </a-marker>
-          <a-entity camera />
-        </a-scene>
-      )}
-      <div
-        ref={sceneRef}
-        className="absolute top-0 left-0 w-full h-full z-30"
-      />
+      <canvas ref={canvasRef} className="ar-canvas" />
     </div>
   );
 };
