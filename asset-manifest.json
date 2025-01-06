@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/AR_Pongal/static/css/main.08659c0b.css",
+    "main.js": "/AR_Pongal/static/js/main.d71d6361.js",
+    "static/js/488.52835ae8.chunk.js": "/AR_Pongal/static/js/488.52835ae8.chunk.js",
+    "index.html": "/AR_Pongal/index.html",
+    "main.08659c0b.css.map": "/AR_Pongal/static/css/main.08659c0b.css.map",
+    "main.d71d6361.js.map": "/AR_Pongal/static/js/main.d71d6361.js.map",
+    "488.52835ae8.chunk.js.map": "/AR_Pongal/static/js/488.52835ae8.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.08659c0b.css",
+    "static/js/main.d71d6361.js"
+  ]
+}
