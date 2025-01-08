@@ -8,6 +8,7 @@ const WebARComponent = () => {
   const [error, setError] = useState(null);
   const [modelLoaded, setModelLoaded] = useState(false);
   const [markerFound, setMarkerFound] = useState(false);
+  const [modelVisible, setModelVisible] = useState(false); // New state to control model visibility
 
   useEffect(() => {
     // Register model loading event handler
@@ -79,6 +80,7 @@ const WebARComponent = () => {
         marker.addEventListener("markerFound", () => {
           console.log("Marker detected!");
           setMarkerFound(true);
+          setModelVisible(true); // Make the model visible when the marker is found
         });
 
         marker.addEventListener("markerLost", () => {
@@ -163,17 +165,14 @@ const WebARComponent = () => {
           smoothCount="5"
           smoothTolerance="0.01"
           smoothThreshold="2">
-          {/* <a-cylinder
-            position="0 1 0"
-            radius="0.5"
-            height="1"
-            color="green"></a-cylinder> */}
-
-          <a-entity
-            position="0 0 0"
-            scale="0.1 0.1 0.1"
-            gltf-model="#pongal-model"
-            animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"></a-entity>
+          {/* Only display the model when markerFound is true */}
+          {modelVisible && (
+            <a-entity
+              position="0 0 0"
+              scale="0.1 0.1 0.1"
+              gltf-model="#pongal-model"
+              animation="property: rotation; to: 0 360 0; loop: true; dur: 10000"></a-entity>
+          )}
         </a-marker>
 
         <a-entity camera></a-entity>
