@@ -163,11 +163,11 @@ const WebARComponent = () => {
           smoothCount="5"
           smoothTolerance="0.01"
           smoothThreshold="2">
-          <a-cylinder
+          {/* <a-cylinder
             position="0 1 0"
             radius="0.5"
             height="1"
-            color="green"></a-cylinder>
+            color="green"></a-cylinder> */}
 
           <a-entity
             position="0 0 0"
